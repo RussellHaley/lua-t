@@ -99,17 +99,17 @@ lt_ort__index( lua_State *L )
 	struct t_ort *ort = t_ort_check_ud( L, -2, 1 );
 
 	lua_rawgeti( L, LUA_REGISTRYINDEX, ort->tR );
+	lua_replace( L, -3 );
 
-	if (LUA_TNUMBER == lua_type( L, -2 ) )
+	if (LUA_TNUMBER == lua_type( L, -1 ) )
 	{
-		lua_rawgeti( L, -1, luaL_checkinteger( L, -2) );
-		lua_rawget( L, -2 );
+		lua_rawgeti( L, -2, luaL_checkinteger( L, -1) );
+		lua_rawget( L, -3 );
 		return 1;
 	}
 	else
 	{
-		luaL_checkstring( L, -2 );
-		lua_pushvalue( L, -2 );
+		luaL_checkstring( L, -1 );
 		lua_rawget( L, -2 );
 		return 1;
 	}
@@ -133,45 +133,39 @@ lt_ort__newindex( lua_State *L )
 	size_t        len;
 	struct t_ort *ort = t_ort_check_ud( L, -3, 1 );
 
-	lua_rawgeti( L, LUA_REGISTRYINDEX, ort->tR ); // S: ort,key/id,val,rft
-	len = lua_rawlen( L, -1 );
+	lua_rawgeti( L, LUA_REGISTRYINDEX, ort->tR ); // S: ort,key/id,val
+	lua_replace( L, -4 );
+	len = lua_rawlen( L, -3 );
 
-	if (LUA_TNUMBER == lua_type( L, -3 ) )
+	if (LUA_TNUMBER == lua_type( L, -2 ) )
 	{
-		idx = luaL_checkinteger( L, -3 );
-		luaL_argcheck( L, 1 <= idx && idx <= (int) len, 2,
+		idx = luaL_checkinteger( L, -2 );
+		luaL_argcheck( L, 1 <= idx && idx <= (int) len, -2,
 			"Index must be greater than 0 and lesser than table length" );
-		lua_rawgeti( L, -1, idx );     // S: ort,id,val,rft,key
-		lua_pushvalue( L, -3 );        // S: ort,id,val,rft,key,val
-		t_stackdump( L );
+		lua_rawgeti( L, -3, idx );     // S: ort,id,val,key
+		lua_replace( L, -3 );
 		lua_rawset( L, -3 );
-		return 1;
 	}
 	else
 	{
-		// S: ort,key,val,rft
-		key = luaL_checkstring( L, -3 );
-		lua_pushvalue( L, -3 );
-		lua_rawget( L, -2 );
+		// S: ort,key,val
+		key = luaL_checkstring( L, -2 );
+		lua_pushvalue( L, -2 );
+		lua_rawget( L, -4 );
 		if (lua_isnoneornil( L, -1 ))    // insert new
 		{
 			lua_pop( L, 1 );
-			lua_pushvalue( L, -3 );       // S:ort,key,val,rft,key
-			lua_rawseti( L, -2, len+1 );  // S:ort,key,val,rft
-			lua_pushvalue( L, -3 );
-			lua_pushvalue( L, -3 );       // S:ort,key,val,rft,key,val
-			lua_rawset( L, -3 );
+			lua_pushvalue( L, -2 );       // S:ort,key,val,key
+			lua_rawseti( L, -4, len+1 );  // S:ort,key,val
+			lua_rawset( L, -3 );          // S:ort
 		}
 		else
 		{
-			lua_pushvalue( L, -3 ); // S: ort,key,val,rft,key,val
-			t_stackdump( L );
-			lua_rawset( L, -3 );
+			lua_pop( L, 1 );              // pop old value
+			lua_rawset( L, -3 );          // S:ort
 		}
-		t_stackdump( L );
-		lua_pop( L, 1 );
-		return 0;
 	}
+	return 0;
 }
 
 ///**--------------------------------------------------------------------------
