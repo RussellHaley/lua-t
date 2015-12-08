@@ -168,73 +168,53 @@ lt_ort__newindex( lua_State *L )
 	return 0;
 }
 
-///**--------------------------------------------------------------------------
-// * the actual iterate(next) over the T.OrderedTable.
-// * It will return key,value pairs in proper order as defined in the constructor.
-// * \param   L lua Virtual Machine.
-// * \lparam  cfunction.
-// * \lparam  previous key.
-// * \lparam  current key.
-// * \lreturn current key, current value.
-// * \return  int    # of values pushed onto the stack.
-// *  -------------------------------------------------------------------------*/
-//static int
-//t_ort_iter( lua_State *L )
-//{
-//	struct t_ort *ort  = t_ort_check_ud( L, lua_upvalueindex( 1 ), 1 );
-//
-//	// get current index and increment
-//	int crs = lua_tointeger( L, lua_upvalueindex( 2 ) ) + 1;
-//
-//	lua_rawgeti( L, LUA_REGISTRYINDEX, ort->tR );
-//
-//	if (crs > lua_rawlen( L, -1 ))
-//		return 0;
-//	else
-//	{
-//		lua_pushinteger( L, crs );
-//		lua_replace( L, lua_upvalueindex( 2 ) );
-//	}
-//	lua_rawgeti( L, LUA_REGISTRYINDEX, pc->m );// Stack: func,nP,_idx
-//	if (T_PCK_STR == pc->t)                        // Get the name for a Struct value
-//		lua_rawgeti( L, -1 , crs + pc->s*2 );   // Stack: func,nP,_idx,nC
-//	else
-//		lua_pushinteger( L, crs );     // Stack: func,iP,_idx,iC
-//	r = (struct t_pcr *) lua_newuserdata( L, sizeof( struct t_pcr ));
-//	lua_rawgeti( L, -3 , crs+pc->s ); // Stack: func,xP,_idx,xC,Rd,ofs
-//	lua_rawgeti( L, -4 , crs );       // Stack: func,xP,_idx,xC,Rd,ofs,pack
-//	lua_remove( L, -5 );              // Stack: func,xP,xC,Rd,ofs,pack
-//
-//	r->r = luaL_ref( L, LUA_REGISTRYINDEX );   // Stack: func,xP,xC,Rd,ofs
-//	r->o = lua_tointeger( L, lua_upvalueindex( 3 ) ) + luaL_checkinteger( L, -1 );
-//	lua_pop( L, 1 );                  // remove ofs
-//	luaL_getmetatable( L, "T.Pack.Reader" );
-//	lua_setmetatable( L, -2 );
-//
-//	return 2;
-//}
-//
-//
-///**--------------------------------------------------------------------------
-// * Pairs method to iterate over the T.Pack.Struct.
-// * \param   L lua Virtual Machine.
-// * \lparam  iterator T.Pack.Struct.
-// * \lreturn pos    position in t_buf.
-// * \return  int    # of values pushed onto the stack.
-// *  -------------------------------------------------------------------------*/
-//static int
-//lt_pck__pairs( lua_State *L )
-//{
-//	struct t_pcr *pr = NULL;
-//	t_pck_getpckreader( L, -1, &pr );
-//
-//	lua_pushnumber( L, 0 );
-//	lua_pushinteger( L, (NULL == pr) ? 0 : pr->o );  // preserve offset for iteration
-//	lua_pushcclosure( L, &t_pck_iter, 3 );
-//	lua_pushvalue( L, -1 );
-//	lua_pushnil( L );
-//	return 3;
-//}
+/**--------------------------------------------------------------------------
+ * the actual iterate(next) over the T.OrderedTable.
+ * It will return key,value pairs in proper order.
+ * \param   L lua Virtual Machine.
+ * \lparam  cfunction.
+ * \lparam  previous key.
+ * \lparam  current key.
+ * \lreturn current key, current value.
+ * \return  int    # of values pushed onto the stack.
+ *  -------------------------------------------------------------------------*/
+static int
+t_ort_iter( lua_State *L )
+{
+	lua_Integer i = luaL_checkinteger( L, -1 ) + 1;
+	lua_pushinteger( L, i );
+	if (LUA_TNIL == lua_geti( L, -3, i ) )
+	{
+		return 1;
+	}
+	else
+	{
+		lua_rawget( L, -4 );
+		return 2;
+	}
+}
+
+
+/**--------------------------------------------------------------------------
+ * Pairs method to iterate over the T.OrderedTable.
+ * \param   L lua Virtual Machine.
+ * \lparam  instance  T.OrderedTable.
+ * \lreturn pos       position in t_buf.
+ * \return  int       # of values pushed onto the stack.
+ *  -------------------------------------------------------------------------*/
+static int
+lt_ort__pairs( lua_State *L )
+{
+	struct t_ort *ort = t_ort_check_ud( L, -1, 1 );
+	lua_rawgeti( L, LUA_REGISTRYINDEX, ort->tR );
+	lua_replace( L, -2 );
+
+	lua_pushnumber( L, 0 );
+	lua_pushcfunction( L, &t_ort_iter );
+	lua_pushvalue(L, 1);     /* state */
+	lua_pushinteger(L, 0);   /* initial value */
+	return 3;
+}
 
 
 /**--------------------------------------------------------------------------
@@ -296,6 +276,7 @@ static const luaL_Reg t_ort_m [] = {
 	{ "__len",      lt_ort__len },
 	{ "__index",    lt_ort__index },
 	{ "__newindex", lt_ort__newindex },
+	{ "__pairs",    lt_ort__pairs },
 	{NULL,    NULL}
 };
 
