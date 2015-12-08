@@ -457,7 +457,7 @@ struct t_pck
  * \return  size in bytes.
  * TODO: return 0 no matter if even one item is of unknown length.
  * --------------------------------------------------------------------------*/
-static size_t 
+static size_t
 t_pck_getsize( lua_State *L,  struct t_pck *p, int bits )
 {
 	size_t        s = 0;
@@ -862,6 +862,7 @@ static struct t_pck
 	return st;
 }
 
+
 //###########################################################################
 //   ____                _                   _
 //  / ___|___  _ __  ___| |_ _ __ _   _  ___| |_ ___  _ __
@@ -1106,7 +1107,7 @@ lt_pck__newindex( lua_State *L )
 static int
 t_pck_iter( lua_State *L )
 {
-	struct t_pck *pc  = t_pck_check_ud( L, lua_upvalueindex( 1 ), 1);
+	struct t_pck *pc  = t_pck_check_ud( L, lua_upvalueindex( 1 ), 1 );
 	struct t_pcr *r;
 
 	// get current index and increment
