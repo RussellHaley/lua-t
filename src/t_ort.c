@@ -168,6 +168,7 @@ lt_ort__newindex( lua_State *L )
 	return 0;
 }
 
+
 /**--------------------------------------------------------------------------
  * the actual iterate(next) over the T.OrderedTable.
  * It will return key,value pairs in proper order.
